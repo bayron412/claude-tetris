@@ -60,8 +60,11 @@ jobs:
                Remove labels from this same set that no longer apply (e.g. after an edit) with
                `--remove-label`.
             4. Post a SINGLE diagnosis comment in English with
-               `gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "..."`
-               structured with these markdown headings:
+               `gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "..."`.
+               The body MUST be written in GitHub-flavored Markdown that GitHub can render correctly
+               (proper heading syntax, fenced code blocks with language hints for any code/file
+               references, bullet/numbered lists, inline code spans for identifiers like function or
+               file names). Structure it with these markdown headings:
                - **Summary** — one or two sentences restating the problem.
                - **Affected areas/files** — relevant functions/files in game.js, index.html, or style.css.
                - **Likely root cause / hypothesis** — your best technical analysis given the code.
