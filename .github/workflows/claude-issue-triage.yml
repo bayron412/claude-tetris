@@ -1,0 +1,77 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Ensure triage labels exist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          create_label() {
+            gh label create "$1" --color "$2" --description "$3" --force --repo "${{ github.repository }}"
+          }
+          create_label "bug" "d73a4a" "Something isn't working"
+          create_label "enhancement" "a2eeef" "New feature or request"
+          create_label "question" "d876e3" "Further information is requested"
+          create_label "documentation" "0075ca" "Docs / README changes"
+          create_label "gameplay" "1d76db" "Game mechanics, rules, scoring, controls"
+          create_label "ui-ux" "c5def5" "Canvas rendering, visuals, layout, overlay"
+          create_label "performance" "fbca04" "Frame rate, loop timing, optimization"
+          create_label "priority:high" "b60205" "High priority"
+          create_label "priority:medium" "fbca04" "Medium priority"
+          create_label "priority:low" "0e8a16" "Low priority"
+          create_label "needs-info" "d4c5f9" "Issue lacks detail to act on"
+
+      - name: Run Claude Code Issue Triage
+        id: claude-triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: '--allowedTools "Bash(gh issue:*),Bash(gh label:*)"'
+          prompt: |
+            You are triaging GitHub issue #${{ github.event.issue.number }} in the
+            ${{ github.repository }} repository (a vanilla JavaScript / HTML5 Canvas Tetris game,
+            all game logic lives in game.js, see CLAUDE.md for architecture details).
+
+            Steps:
+            1. Read the issue with `gh issue view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json title,body,labels,comments`.
+            2. Read the relevant source files (game.js, index.html, style.css) to understand
+               the code paths the issue is likely touching.
+            3. Choose labels ONLY from this predefined set — do not create or apply any other
+               labels: bug, enhancement, question, documentation, gameplay, ui-ux, performance,
+               priority:high, priority:medium, priority:low, needs-info.
+               Apply the chosen labels with:
+               `gh issue edit ${{ github.event.issue.number }} --repo ${{ github.repository }} --add-label "<label1>,<label2>,..."`
+               Remove labels from this same set that no longer apply (e.g. after an edit) with
+               `--remove-label`.
+            4. Post a SINGLE diagnosis comment in English with
+               `gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "..."`
+               structured with these markdown headings:
+               - **Summary** — one or two sentences restating the problem.
+               - **Affected areas/files** — relevant functions/files in game.js, index.html, or style.css.
+               - **Likely root cause / hypothesis** — your best technical analysis given the code.
+               - **Suggested approach to fix** — concrete next steps for implementing a solution.
+               - **Complexity estimate** — trivial / small / medium / large, with a one-line reason.
+               If the issue does not have enough information to diagnose, apply the `needs-info`
+               label instead of a guessed root cause, and ask specific clarifying questions in the
+               comment body instead of the "Suggested approach" section.
+            5. Before posting, check existing comments on the issue. If a previous diagnosis
+               comment from you already exists and the issue title/body has not materially
+               changed since then, do not post a duplicate comment — just update labels if needed.
+               If the issue was edited with materially new information, post one new diagnosis
+               comment reflecting the updated understanding (do not edit/delete the old comment).
