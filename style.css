@@ -244,3 +244,146 @@ kbd {
 #restart-btn:hover {
   background: var(--restart-btn-hover-bg);
 }
+
+/* ---- Highscores ---- */
+.highscore-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+}
+
+.highscore-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--controls-color);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.highscore-row .hs-rank {
+  width: 16px;
+  color: var(--label-color);
+}
+
+.highscore-row .hs-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.highscore-row .hs-score {
+  color: var(--value-color);
+  font-weight: 700;
+}
+
+.highscore-row.highscore-highlight {
+  background: rgba(122, 162, 247, 0.18);
+  color: var(--value-color);
+}
+
+.highscore-empty {
+  list-style: none;
+  font-size: 12px;
+  color: var(--label-color);
+  font-style: italic;
+}
+
+.stats-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--controls-color);
+  margin-top: 6px;
+}
+
+.stats-row strong {
+  color: var(--value-color);
+}
+
+.reset-btn {
+  margin-top: 8px;
+  background: transparent;
+  color: var(--controls-color);
+  border: 1px solid var(--kbd-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.reset-btn:hover {
+  background: var(--kbd-bg);
+  color: var(--text-color);
+}
+
+.highscore-panel {
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.highscore-panel .highscore-list {
+  max-height: 130px;
+  overflow-y: auto;
+}
+
+.name-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 8px;
+  border: 1px dashed var(--kbd-border);
+  border-radius: 6px;
+}
+
+.name-entry.hidden {
+  display: none;
+}
+
+.highscore-new {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--overlay-title-color);
+  letter-spacing: 1px;
+}
+
+#player-name {
+  width: 140px;
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  color: var(--text-color);
+  padding: 6px 8px;
+  font-size: 13px;
+  text-align: center;
+}
+
+#save-score-btn {
+  background: var(--restart-btn-bg);
+  color: var(--restart-btn-color);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 18px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.15s;
+}
+
+#save-score-btn:hover {
+  background: var(--restart-btn-hover-bg);
+}
