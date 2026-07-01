@@ -68,6 +68,24 @@ body {
   margin-bottom: 16px;
 }
 
+.title-bar-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skin-select {
+  background: var(--board-bg);
+  color: var(--title-color);
+  border: 1px solid var(--board-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
 .game-title {
   text-align: center;
   font-size: 32px;
