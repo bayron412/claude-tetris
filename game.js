@@ -30,6 +30,16 @@ const PIECES = [
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
+const POWERUPS = {
+  bomb:    { icon: '💣', color: '#e53935', label: 'Bomba: destruye 3×3' },
+  ray:     { icon: '⚡', color: '#fdd835', label: 'Rayo: limpia fila y columna' },
+  tint:    { icon: '🎨', color: '#8e24aa', label: 'Tinte: borra un color' },
+  gravity: { icon: '⬇',  color: '#43a047', label: 'Gravedad: compacta huecos' },
+  freeze:  { icon: '❄',  color: '#00acc1', label: 'Congelar: pausa la caída 5s' },
+};
+const POWERUP_TYPES = Object.keys(POWERUPS);
+const POWERUP_CHANCE = 0.1;
+
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
@@ -46,7 +56,7 @@ const themeSwitch = document.getElementById('theme-switch');
 const THEME_STORAGE_KEY = 'tetris-theme';
 let gridColor = '#22222e';
 
-let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, freezeUntil;
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -56,6 +66,15 @@ function randomPiece() {
   const type = Math.floor(Math.random() * 8) + 1;
   const shape = PIECES[type].map(row => [...row]);
   return { type, shape, x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0 };
+}
+
+function randomPowerUp() {
+  const power = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)];
+  return { type: 'power', power, shape: [[1]], x: Math.floor(COLS / 2), y: 0 };
+}
+
+function nextPiece() {
+  return Math.random() < POWERUP_CHANCE ? randomPowerUp() : randomPiece();
 }
 
 function collide(shape, ox, oy) {
@@ -141,15 +160,77 @@ function softDrop() {
   }
 }
 
+function applyGravity() {
+  for (let c = 0; c < COLS; c++) {
+    const values = [];
+    for (let r = 0; r < ROWS; r++) {
+      if (board[r][c]) values.push(board[r][c]);
+    }
+    for (let r = ROWS - 1; r >= 0; r--) {
+      board[r][c] = values.length ? values.pop() : 0;
+    }
+  }
+}
+
+function powerBomb(x, y) {
+  for (let r = y - 1; r <= y + 1; r++) {
+    if (r < 0 || r >= ROWS) continue;
+    for (let c = x - 1; c <= x + 1; c++) {
+      if (c < 0 || c >= COLS) continue;
+      board[r][c] = 0;
+    }
+  }
+  applyGravity();
+}
+
+function powerRay(x, y) {
+  if (y >= 0 && y < ROWS) board[y].fill(0);
+  for (let r = 0; r < ROWS; r++) board[r][x] = 0;
+}
+
+function powerTint(x, y) {
+  let targetColor = 0;
+  for (let r = y; r < ROWS; r++) {
+    if (board[r][x]) { targetColor = board[r][x]; break; }
+  }
+  if (!targetColor) return;
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (board[r][c] === targetColor) board[r][c] = 0;
+  applyGravity();
+}
+
+function powerGravity() {
+  applyGravity();
+}
+
+function powerFreeze() {
+  freezeUntil = performance.now() + 5000;
+}
+
+function applyPowerUp(piece) {
+  switch (piece.power) {
+    case 'bomb': powerBomb(piece.x, piece.y); break;
+    case 'ray': powerRay(piece.x, piece.y); break;
+    case 'tint': powerTint(piece.x, piece.y); break;
+    case 'gravity': powerGravity(); break;
+    case 'freeze': powerFreeze(); break;
+  }
+}
+
 function lockPiece() {
-  merge();
+  if (current.power) {
+    applyPowerUp(current);
+  } else {
+    merge();
+  }
   clearLines();
   spawn();
 }
 
 function spawn() {
   current = next;
-  next = randomPiece();
+  next = nextPiece();
   if (collide(current.shape, current.x, current.y)) {
     endGame();
   }
@@ -180,6 +261,20 @@ function drawNut(context, x, y, size, alpha) {
       if (!(r === 1 && c === 1)) drawBlock(context, x + c, y + r, 8, size, alpha);
 }
 
+function drawPowerUp(context, x, y, size, power, alpha) {
+  const info = POWERUPS[power];
+  context.globalAlpha = alpha ?? 1;
+  context.fillStyle = info.color;
+  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+  context.fillStyle = 'rgba(255,255,255,0.12)';
+  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  context.font = `${Math.floor(size * 0.6)}px sans-serif`;
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(info.icon, x * size + size / 2, y * size + size / 2 + 1);
+  context.globalAlpha = 1;
+}
+
 function drawGrid() {
   ctx.strokeStyle = gridColor;
   ctx.lineWidth = 0.5;
@@ -208,7 +303,9 @@ function draw() {
 
   // ghost
   const gy = ghostY();
-  if (current.type === 8) {
+  if (current.power) {
+    drawPowerUp(ctx, current.x, gy, BLOCK, current.power, 0.2);
+  } else if (current.type === 8) {
     drawNut(ctx, current.x, gy, BLOCK, 0.2);
   } else {
     for (let r = 0; r < current.shape.length; r++)
@@ -218,7 +315,9 @@ function draw() {
   }
 
   // current piece
-  if (current.type === 8) {
+  if (current.power) {
+    drawPowerUp(ctx, current.x, current.y, BLOCK, current.power);
+  } else if (current.type === 8) {
     drawNut(ctx, current.x, current.y, BLOCK);
   } else {
     for (let r = 0; r < current.shape.length; r++)
@@ -233,7 +332,9 @@ function drawNext() {
   const shape = next.shape;
   const offX = Math.floor((4 - shape[0].length) / 2);
   const offY = Math.floor((4 - shape.length) / 2);
-  if (next.type === 8) {
+  if (next.power) {
+    drawPowerUp(nextCtx, offX, offY, NB, next.power);
+  } else if (next.type === 8) {
     drawNut(nextCtx, offX, offY, NB);
   } else {
     for (let r = 0; r < shape.length; r++)
@@ -267,13 +368,17 @@ function togglePause() {
 function loop(ts) {
   const dt = ts - lastTime;
   lastTime = ts;
-  dropAccum += dt;
-  if (dropAccum >= dropInterval) {
+  if (ts < freezeUntil) {
     dropAccum = 0;
-    if (!collide(current.shape, current.x, current.y + 1)) {
-      current.y++;
-    } else {
-      lockPiece();
+  } else {
+    dropAccum += dt;
+    if (dropAccum >= dropInterval) {
+      dropAccum = 0;
+      if (!collide(current.shape, current.x, current.y + 1)) {
+        current.y++;
+      } else {
+        lockPiece();
+      }
     }
   }
   if (gameOver || paused) return;
@@ -290,8 +395,9 @@ function init() {
   gameOver = false;
   dropInterval = 1000;
   dropAccum = 0;
+  freezeUntil = 0;
   lastTime = performance.now();
-  next = randomPiece();
+  next = nextPiece();
   spawn();
   updateHUD();
   overlay.classList.add('hidden');
