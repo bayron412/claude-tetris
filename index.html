@@ -10,10 +10,18 @@
   <div class="wrapper">
     <div class="title-bar">
       <h1 class="game-title">TETRIS</h1>
-      <label class="theme-toggle" for="theme-switch" title="Cambiar tema claro/oscuro">
-        <input type="checkbox" id="theme-switch" />
-        <span class="switch"></span>
-      </label>
+      <div class="title-bar-controls">
+        <select id="skin-select" class="skin-select" title="Cambiar skin del tablero">
+          <option value="retro">Retro</option>
+          <option value="neon">Neon</option>
+          <option value="pastel">Pastel</option>
+          <option value="pixel">Pixel Art</option>
+        </select>
+        <label class="theme-toggle" for="theme-switch" title="Cambiar tema claro/oscuro">
+          <input type="checkbox" id="theme-switch" />
+          <span class="switch"></span>
+        </label>
+      </div>
     </div>
     <div class="game-container">
       <canvas id="board" width="300" height="600"></canvas>
@@ -90,6 +98,30 @@
             <span>Máx. líneas: <strong id="max-lines-overlay">0</strong></span>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div id="pause-menu" class="overlay hidden">
+      <div class="overlay-box pause-box">
+        <p id="pause-title">PAUSA</p>
+        <div class="pause-actions">
+          <button id="resume-btn">Reanudar</button>
+          <button id="pause-restart-btn">Reiniciar</button>
+        </div>
+        <details class="pause-controls">
+          <summary>Ver controles</summary>
+          <ul>
+            <li><kbd>←</kbd><kbd>→</kbd> mover</li>
+            <li><kbd>↑</kbd> rotar</li>
+            <li><kbd>↓</kbd> bajar</li>
+            <li><kbd>Space</kbd> caída</li>
+            <li><kbd>P</kbd> / <kbd>Esc</kbd> pausa</li>
+          </ul>
+        </details>
+        <label class="start-level-label" for="start-level-input">
+          Nivel inicial
+          <input type="number" id="start-level-input" min="1" max="15" value="1" />
+        </label>
       </div>
     </div>
   </div>
